@@ -1,0 +1,21 @@
+{
+  "name": "electron-adventure",
+  "version": "0.1.0",
+  "main": "app/main.js",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/JustusAdam/electron-adventure/issues",
+    "email": "dev@justus.science"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "coffee-script": "*"
+  },
+  "scripts": {
+    "prepublish": "coffee -o app/ -c src/"
+  },
+  "repository":{
+    "type": "git",
+    "url": "https://github.com/JustusAdam/electron-adventure.git"
+  }
+}
