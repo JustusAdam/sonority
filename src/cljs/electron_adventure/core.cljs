@@ -16,9 +16,11 @@
 
 (defn main-page
   []
-  [:div "Hello World!"
-    (counter-box)
-    (fv/fileview)])
+  [:div {:class "container-fluid"}
+    [:div {:class "row"}
+      ; "Hello World!"
+      ; (counter-box)
+      (fv/fileview)]])
 
 (defn mount-root
   []
