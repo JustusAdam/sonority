@@ -1,5 +1,5 @@
 
-# electron-adventure
+# sonority
 
 ## Requirements
 
@@ -54,7 +54,7 @@ In another terminal window, launch the electron app:
 grunt launch
 ```
 
-You can edit the `src/cljs/electron_adventure/core.cljs` file and the changes should show up in the electron app without the need to re-launch.
+You can edit the `src/cljs/sonority/core.cljs` file and the changes should show up in the electron app without the need to re-launch.
 
 ## Dependencies
 

@@ -1,4 +1,4 @@
-(ns ^:figwheel-no-load electron-adventure.prod
-  (:require [electron-adventure.core :as core]))
+(ns ^:figwheel-no-load sonority.prod
+  (:require [sonority.core :as core]))
 
 (core/init!)

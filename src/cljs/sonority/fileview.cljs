@@ -1,9 +1,9 @@
-(ns electron-adventure.fileview
+(ns sonority.fileview
   (:require [reagent.core :as reagent]
             [cljsjs.react]
             [cljs.nodejs :as nodejs]
             [clojure.string :as string]
-            [electron-adventure.player :as player :refer [File]]))
+            [sonority.player :as player :refer [File]]))
 
 (def fs (nodejs/require "fs"))
 
@@ -41,6 +41,12 @@
 
 (rescan-folder @folder-select)
 
+(defn search-bar [target]
+  [:div.search
+    [:label "Search"]
+    [:input {:value @target :on-change #(reset! target (-> % .-target .-value))}]
+    [:button {:on-click #(reset! search-crit "")} "x"]])
+
 (defn fileview []
   [:div.row
     [:div.col-xs-6
@@ -53,10 +59,7 @@
                                :on-change #(reset! folder-select (let [val (-> % .-target .-value)]
                                                                       (File. val val)))}]]
         [:button {:on-click #(rescan-folder @folder-select)} "Index"]]
-      [:div
-        [:label "Search"]
-        [:input {:value @search-crit :on-change #(reset! search-crit (-> % .-target .-value))}]
-        [:button {:on-click #(reset! search-crit "")} "x"]]
+        (search-bar search-crit)
       (let [crit (string/lower-case @search-crit)]
         (doall (for [file (filter #(not= -1 (.indexOf (string/lower-case (:name %)) crit)) (sort-by :name @files))]
             ^{:key (:path file)}

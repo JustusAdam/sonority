@@ -1,7 +1,7 @@
-(ns electron-adventure.core
+(ns sonority.core
   (:require [reagent.core :as reagent]
             [cljsjs.react]
-            [electron-adventure.fileview :as fv]))
+            [sonority.fileview :as fv]))
 
 (defn main-page
   []

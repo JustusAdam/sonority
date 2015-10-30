@@ -1,4 +1,4 @@
-(defproject electron-adventure "0.1.0-alpha1"
+(defproject sonority "0.1.0-alpha1"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -30,16 +30,16 @@
 
   :profiles {:dev {:cljsbuild {:builds {:app {:source-paths ["env/dev/cljs"]
                                               :compiler {:source-map true
-                                                         :main       "electron-adventure.dev"
+                                                         :main       "sonority.dev"
                                                          :verbose true}
-                                              :figwheel {:on-jsload "electron-adventure.core/mount-root"}}}}
+                                              :figwheel {:on-jsload "sonority.core/mount-root"}}}}
 
                    :plugins [[lein-ancient "0.6.7"]
                              [lein-kibit "0.1.2"]
                              [lein-cljfmt "0.3.0"]
                              [lein-figwheel "0.4.0"]]}
              :production {:cljsbuild {:builds {:app {:compiler {:optimizations :advanced
-                                                                :main          "electron-adventure.prod"
+                                                                :main          "sonority.prod"
                                                                 :cache-analysis false
                                                                 :closure-defines {"goog.DEBUG" false}
                                                                 :externs ["externs/misc.js"]

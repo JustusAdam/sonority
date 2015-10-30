@@ -1,4 +1,4 @@
-(ns electron-adventure.player
+(ns sonority.player
   (:require [reagent.core :as reagent]
             [cljsjs.react]
             [cljs.nodejs :as nodejs]
