@@ -10,30 +10,39 @@
 
 (def should-play (reagent/atom false))
 
+(def current-duration (reagent/atom 0))
+
+(def player-ref (reagent/atom nil))
+
 (defn toggle-player [key ref old-state new-state]
   (let [player (.getElementById js/document "main-player")]
-    (do
-      (println new-state)
-      (if new-state
-        (.play player)
-        (.pause player))
-      true)))
+    (if new-state
+      (.play player)
+      (.pause player))
+    true))
 
 (add-watch should-play :player-link toggle-player)
 
 (defn select-new [piece]
   (do
-    (reset! should-play true)
+    ;(reset! should-play true)
     (reset! selected-piece piece)))
 
-(defn player-interface [piece]
+
+(defn controls []
+  [:div.controls
+    [:button {:on-click #(swap! should-play not)} (if @should-play "||" ">")]
+    [:span @current-duration]])
+
+
+(defn player [piece]
+  [:audio#main-player {:src (:path @selected-piece) :controls true :autoPlay @should-play} "No support?"])
+
+(defn interface [piece]
   [:div
     [:div [:p "Playing: " (if (empty? (:name piece)) "nothing" (:name piece) )]]
-    [:audio#main-player {:src (:path piece) :controls true :autoPlay true} "No support?"]])
+    (player piece)
+    (controls)])
 
-(defn player []
-  (player-interface @selected-piece))
-
-(defn player-controls []
-  [:div.controls
-    [:button {:on-click #(swap! should-play not)} (if @should-play "||" ">")]])
+(defn std-interface []
+  (interface @selected-piece))

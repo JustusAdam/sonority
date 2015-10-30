@@ -14,6 +14,8 @@
 
 (def folder-select (reagent/atom music-folder))
 
+(def search-crit (reagent/atom ""))
+
 (def audio-endings
   ["mp3" "ogg" "wav" "m4a"])
 
@@ -51,14 +53,17 @@
                                :on-change #(reset! folder-select (let [val (-> % .-target .-value)]
                                                                       (File. val val)))}]]
         [:button {:on-click #(rescan-folder @folder-select)} "Index"]]
-      (doall (for [file (sort-by :name @files)]
-          ^{:key (:path file)}
-          [:div
-            ((if (= @player/selected-piece file)
-              #(assoc % :class "active")
-              identity)
-                {:on-click #(player/select-new file)})
-            (:name file)]))]
+      [:div
+        [:label "Search"]
+        [:input {:on-change #(reset! search-crit (-> % .-target .-value))}]]
+      (let [crit @search-crit]
+        (doall (for [file (filter #(not= -1 (.indexOf (:name %) crit)) (sort-by :name @files))]
+            ^{:key (:path file)}
+            [:div
+              ((if (= @player/selected-piece file)
+                #(assoc % :class "active")
+                identity)
+                  {:on-click #(player/select-new file)})
+              (:name file)])))]
     [:div.col-xs-6
-      (player/player)
-      (player/player-controls)]])
+      (player/std-interface)]])
