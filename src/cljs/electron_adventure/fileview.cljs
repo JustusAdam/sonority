@@ -15,7 +15,7 @@
 (def folder-select (reagent/atom music-folder))
 
 (def audio-endings
-  ["mp3", "ogg", "wav"])
+  ["mp3" "ogg" "wav" "m4a"])
 
 (defn check-and-add-file [file]
   (if (some (partial = (last (string/split (:name file)  #"\." ))) audio-endings)
@@ -28,25 +28,28 @@
         (for [file (map #(File. % (str (:path folder) "/" %)) files)]
           (.stat fs (:path file)
             (fn [err stat]
-              (do
-                (cond
-                  (.isDirectory stat) (scan-folder file)
-                  (.isFile stat) (check-and-add-file file))))))))))
-
+              (cond
+                (.isDirectory stat) (scan-folder file)
+                (.isFile stat) (check-and-add-file file)))))))))
 
 (defn rescan-folder [folder]
   (do
     (reset! files #{})
     (scan-folder folder)))
 
-(rescan-folder music-folder)
+(rescan-folder @folder-select)
 
 (defn fileview []
-  [:div {:class "row"}
-    [:div {:class "col-xs-6"}
+  [:div.row
+    [:div.col-xs-6
       [:h2 "I am the fileview."]
       [:p (str "Folder indexed: '" (:path @folder-select) "'")]
       [:div
+        [:div
+          [:label {:for "pick-folder"} "Select indexed folder"]
+          [:input#pick-folder {:type "text"
+                               :on-change #(reset! folder-select (let [val (-> % .-target .-value)]
+                                                                      (File. val val)))}]]
         [:button {:on-click #(rescan-folder @folder-select)} "Index"]]
       (doall (for [file (sort-by :name @files)]
           ^{:key (:path file)}
@@ -54,7 +57,8 @@
             ((if (= @player/selected-piece file)
               #(assoc % :class "active")
               identity)
-                {:on-click #(reset! player/selected-piece file)})
+                {:on-click #(player/select-new file)})
             (:name file)]))]
-    [:div {:class "col-xs-6"}
-      (player/player)]])
+    [:div.col-xs-6
+      (player/player)
+      (player/player-controls)]])
