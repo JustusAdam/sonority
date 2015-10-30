@@ -55,9 +55,10 @@
         [:button {:on-click #(rescan-folder @folder-select)} "Index"]]
       [:div
         [:label "Search"]
-        [:input {:on-change #(reset! search-crit (-> % .-target .-value))}]]
-      (let [crit @search-crit]
-        (doall (for [file (filter #(not= -1 (.indexOf (:name %) crit)) (sort-by :name @files))]
+        [:input {:value @search-crit :on-change #(reset! search-crit (-> % .-target .-value))}]
+        [:button {:on-click #(reset! search-crit "")} "x"]]
+      (let [crit (string/lower-case @search-crit)]
+        (doall (for [file (filter #(not= -1 (.indexOf (string/lower-case (:name %)) crit)) (sort-by :name @files))]
             ^{:key (:path file)}
             [:div
               ((if (= @player/selected-piece file)
