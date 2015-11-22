@@ -1,0 +1,24 @@
+{
+  "name": "sonority",
+  "version": "1.0.0",
+  "description": "A music player",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JustusAdam/sonority.git"
+  },
+  "keywords": [
+  ],
+  "author": "JustusAdam",
+  "license": "BSD3",
+  "bugs": {
+    "url": "https://github.com/JustusAdam/sonority/issues"
+  },
+  "homepage": "https://github.com/JustusAdam/sonority#readme",
+  "devDependencies": {
+    "electron-prebuilt": "^0.34.0"
+  }
+}
