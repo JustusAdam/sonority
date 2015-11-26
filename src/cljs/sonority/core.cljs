@@ -5,7 +5,7 @@
 
 (defn main-page
   []
-  [:div {:class "container-fluid"}
+  [:div.container
       (fv/fileview)])
 
 (defn mount-root

@@ -49,7 +49,7 @@
 
 (defn fileview []
   [:div.row
-    [:div.col-xs-6
+    [:div.column.small-6
       [:h2 "I am the fileview."]
       [:p (str "Folder indexed: '" (:path @folder-select) "'")]
       [:div
@@ -67,7 +67,7 @@
               ((if (= @player/selected-piece file)
                 #(assoc % :class "active")
                 identity)
-                  {:on-click #(player/select-new file)})
+                  {:on-click #(player/add-to-queue file)})
               (:name file)])))]
     [:div.col-xs-6
       (player/std-interface)]])
