@@ -53,17 +53,17 @@
 (defn- create-player [piece]
   (let [elem (if (nil? piece) (js/Audio.) (js/Audio. piece))]
     (do
-      (.addEventListener elem "player-timechange" #(update-player-time))
+      ; (.addEventListener elem "player-timechange" #(update-player-time))
       (if @playing (.play elem))
       elem)))
 
 (defn- toggle-player [key ref old-state new-state]
   (if new-state
     (do
-      (attach-clock-player-time-updater)
+      ; (attach-clock-player-time-updater)
       (.play @player))
     (do
-      (detach-clock-player-time-updater)
+      ; (detach-clock-player-time-updater)
       (.pause @player))))
 
 (defn toggle-piece [key ref old-state new-state]
@@ -77,7 +77,7 @@
     (reset! selected-piece piece)))
 
 (defn play-next []
-  (swap! queue (fn [[x & r]] (do (reset! selected-piece x) r))))
+  (swap! queue (fn [[x & r]] (do (select-new x) r))))
 
 (defn add-as-next [file]
   (swap! queue #(cons % file)))
@@ -90,7 +90,7 @@
 
 (defn remove-queue-item [a]
   (cond
-    (integer? a) (swap! queue #(util/drop-nth a %))
+    (integer? a)  (swap! queue #(util/drop-nth a %))
     (fn? a) (rem-q-item-where a)
     :else (rem-q-item-where #(= a %))))
 
@@ -101,6 +101,7 @@
   (let [player-time (.-duration @player)
         current @current-player-time]
     [:div.controls
+      [:div (:name @selected-piece)]
       [:button {:on-click #(swap! playing not)} (if @playing "||" ">")]
       [:progress.progress
         { :value (let [val (/ (if (js/isNaN current) 0 current) player-time)]
@@ -110,14 +111,15 @@
 
 (defn interface [piece]
   [:div
-    [:div [:p "Playing: " (if (empty? (:name piece)) "nothing" (:name piece))]]
-    [:table
-      (doall
-        (for [[index file] (vector-zip [(range) @queue])]
-          ^{:key (str "queue-" index (:name file))}
+    [:section
+      [:h3 "Queue"]
+      [:table
+        (doall
+          (for [[index file] (map vector (range) @queue)]
+            ^{:key (str "queue-" index (:name file))}
             [:tr
               [:td (str (:name file))]
-              [:td [:a {:on-click #(remove-queue-item index)} "remove"]]]))]
+              [:td [:a {:on-click #(remove-queue-item (int index))} "remove"]]]))]]
     (controls)])
 
 (defn std-interface []

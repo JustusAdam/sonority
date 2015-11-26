@@ -60,14 +60,17 @@
                                                                       (File. val val)))}]]
         [:button {:on-click #(rescan-folder @folder-select)} "Index"]]
         (search-bar search-crit)
-      (let [crit (string/lower-case @search-crit)]
-        (doall (for [file (filter #(not= -1 (.indexOf (string/lower-case (:name %)) crit)) (sort-by :name @files))]
-            ^{:key (:path file)}
-            [:div
-              ((if (= @player/selected-piece file)
-                #(assoc % :class "active")
-                identity)
-                  {:on-click #(player/add-to-queue file)})
-              (:name file)])))]
+      [:table
+        (let [crit (string/lower-case @search-crit)
+              selected @player/selected-piece]
+          (doall (for [file (filter #(not= -1 (.indexOf (string/lower-case (:name %)) crit)) (sort-by :name @files))]
+              ^{:key (:path file)}
+              [:tr
+                ((if (= selected file)
+                  #(assoc % :class "active")
+                  identity)
+                    {:on-click #(player/select-new file)})
+                [:td (:name file)]
+                [:td [:a {:on-click #(player/add-to-queue file)} "enqueue"]]])))]]
     [:div.col-xs-6
       (player/std-interface)]])
