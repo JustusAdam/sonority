@@ -63,7 +63,8 @@
 
 (defn toggle-piece [key ref old-state new-state]
   (if (not= old-state new-state)
-    (reset! player (create-player (:path new-state)))))
+    ; (reset! player (create-player (:path new-state)))))
+    (swap! player #(do (.pause %) (create-player (:path new-state))))))
 
 (defn select-new [piece]
   (do
