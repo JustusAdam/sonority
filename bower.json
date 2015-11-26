@@ -2,7 +2,7 @@
   "name": "sonority",
   "version": "0.0.0",
   "dependencies": {
-    "bootstrap": "3.3.5"
+    "foundation": "~5.5.3"
   },
   "license": "MIT",
   "private": true,
