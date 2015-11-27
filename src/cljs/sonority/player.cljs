@@ -108,7 +108,7 @@
 
 (defn remove-queue-item [a]
   (cond
-    (integer? a)  (swap! queue #(util/drop-nth a %))
+    (integer? a) (swap! queue #(util/drop-nth a %))
     (fn? a) (rem-q-item-where a)
     :else (rem-q-item-where #(= a %))))
 
@@ -140,7 +140,7 @@
             ^{:key (str "queue-" index (:name file))}
             [:tr
               [:td (str (:name file))]
-              [:td [:a {:on-click #(remove-queue-item (int index))} "remove"]]]))]]
+              [:td [:a {:on-click #(remove-queue-item (int index))} "remove"]]]))]]])
     (controls)])
 
 (defn std-interface []
