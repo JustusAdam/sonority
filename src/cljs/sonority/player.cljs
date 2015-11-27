@@ -37,7 +37,23 @@
 
 (defonce queue (reagent/atom []))
 
+(defonce volume (reagent/atom 0.5))
 
+(def volume-alter-interval 0.05)
+
+
+
+(defn alter-volume [amount]
+  (swap! volume
+    (fn [vol]
+      (let [new-vol (+ amount vol)]
+        (cond
+          (< 1 new-vol) 1.0
+          (> 0 new-vol) 0
+          :else new-vol)))))
+
+(defn- player-volume-updater [key ref old-state new-state]
+  (set! (.-volume @player) new-state))
 
 (defn- update-player-time [] (reset! current-player-time (.-currentTime @player)))
 
@@ -53,7 +69,8 @@
 (defn- create-player [piece]
   (let [elem (if (nil? piece) (js/Audio.) (js/Audio. piece))]
     (do
-      ; (.addEventListener elem "player-timechange" #(update-player-time))
+      (.addEventListener elem "durationchange" #(update-player-time))
+      (set! (.-volume elem) @volume)
       (if @playing (.play elem))
       elem)))
 
@@ -69,7 +86,8 @@
 (defn toggle-piece [key ref old-state new-state]
   (if (not= old-state new-state)
     ; (reset! player (create-player (:path new-state)))))
-    (swap! player #(do (.pause %) (create-player (:path new-state))))))
+    (set! (.-src @player) (:path new-state))))
+    ; (swap! player #(do (.pause %) (create-player (:path new-state))))))
 
 (defn select-new [piece]
   (do
@@ -104,10 +122,13 @@
       [:div (:name @selected-piece)]
       [:button {:on-click #(swap! playing not)} (if @playing "||" ">")]
       [:progress.progress
-        { :value (let [val (/ (if (js/isNaN current) 0 current) player-time)]
-                   (if (js/isNaN val) 0 val))}]
+        { :value (if (js/isNaN current) 0 current)
+          :max (if (js/isNaN player-time) 0 player-time)}]
       [:span (str (format-time current) "/" (format-time player-time))]
-      [:button {:on-click #(play-next)} "next"]]))
+      [:button {:on-click #(play-next)} "next"]
+      [:button {:on-click #(alter-volume volume-alter-interval)} "Volume up"]
+      [:button {:on-click #(alter-volume (- 0 volume-alter-interval))} "Volume down"]
+      [:progress.progress {:value @volume}]]))
 
 (defn interface [piece]
   [:div
@@ -136,5 +157,7 @@
 (add-watch playing :player-link toggle-player)
 
 (add-watch selected-piece :piece-link toggle-piece)
+
+(add-watch volume :volume-updater player-volume-updater)
 
 (attach-clock-player-time-updater)
