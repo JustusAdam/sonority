@@ -6,7 +6,8 @@
             [sonority.player :as player]
             [audio.constants :refer [audio-endings]]
             [audio.types :refer [Album Track album-identifier meta-track-to-album get-meta-val]]
-            [audio.metadata :as md]))
+            [audio.metadata :as md]
+            [filesystem.path :refer [get-extension]]))
 
 (def fs (nodejs/require "fs"))
 
@@ -22,18 +23,19 @@
 (def search-crit (reagent/atom ""))
 
 (defn check-and-add-file [file]
-  (if (contains? audio-endings (-> (string/split (:name file)  #"\." ) last keyword))
+  (if (contains? audio-endings (get-extension (:path file)))
     (md/get-metadata file
       (fn [meta]
-        (let [track (Track. (get meta :title (:name file)) meta (:path file))]
+        (let [track (Track. (get meta :title (:name file)) meta (:path file))
+              ai (album-identifier track)]
           (swap! files
             (fn [files]
-               (update files (album-identifier track)
+              (update files ai
                 (fn [album]
                   (case album
                     nil (Album. (meta-track-to-album meta) (get-meta-val track :album) #{track})
                     (update album :tracks #(conj % track))))))))))))
-    ; (swap! files #(conj % file))))
+
 
 (defn scan-folder [folder]
   (.readdir fs (:path folder)
@@ -48,7 +50,7 @@
 
 (defn rescan-folder [folder]
   (do
-    (reset! files #{})
+    (reset! files {})
     (scan-folder folder)))
 
 (rescan-folder @folder-select)
@@ -63,7 +65,7 @@
 (defn track-as-tr
   [file]
   [:tr {:on-click #(player/select-new file)}
-    [:td (:name file)]
+    [:td (:title file)]
     [:td [:a {:on-click #(player/add-to-queue file)} "enqueue"]]])
 
 
@@ -71,9 +73,9 @@
   (let [crit (string/lower-case @search-crit)
         matching
           (filter
-            #(not= -1 (.indexOf (string/lower-case (:name %)) crit))
+            #(not= -1 (.indexOf (string/lower-case (:title %)) crit))
             (apply concat (map :tracks @files)))]
-    [:table
+    [:table.search-results
       (doall
         (map track-as-tr matching))]))
 
@@ -81,16 +83,15 @@
 (defn all-albums
   []
   [:ul.accordion
-    (let [selected @player/selected-piece]
-      (doall
-        (for [album (sort-by :title @files)]
-          ^{:key (:path album)}
-          [:li.accordion-navigation
-            [:a {:href (-> album :title (partial str "#"))}
-              [:div {:id (:title album)}
-                [:table
-                  (doall
-                    (map track-as-tr (sort-by #(get-meta-val % :tracknumber) (:tracks album))))]]]])))])
+    (doall
+      (for [album (sort-by :title (vals @files))]
+        ^{:key (:path album)}
+        [:li.accordion-navigation
+          [:a {:href (-> album :title (partial str "#"))}
+            [:div {:id (:title album)}
+              [:table
+                (doall
+                  (map track-as-tr (sort-by #(get-meta-val % :tracknumber) (:tracks album))))]]]]))])
 
 
 (defn fileview []
@@ -106,8 +107,8 @@
                                                                       (File. val val)))}]]
         [:button {:on-click #(rescan-folder @folder-select)} "Index"]]
       (search-bar search-crit)
-      (if @search-crit
-        (searched)
-        (all-albums))]
+      (if (empty? @search-crit)
+        (all-albums)
+        (searched))]
     [:div.col-xs-6
       (player/std-interface)]])

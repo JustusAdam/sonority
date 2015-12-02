@@ -5,9 +5,9 @@
 
 
 (def audio-types
-  [ (AudioType. :mp3 [] [".mp3"])
-    (AudioType. :ogg ["oga"] [".oga", ".ogg"])
-    (AudioType. :wma [] [".wma"])])
+  [ (AudioType. :mp3 [] ["mp3"])
+    (AudioType. :ogg ["oga"] ["oga", "ogg"])
+    (AudioType. :wma [] ["wma"])])
 
 
 (def audio-map
@@ -16,8 +16,9 @@
 (def audio-endings
   (reduce
     (fn [map type]
-      (for [ending (:fileendings type)]
-        (assoc map (keyword ending) type)))
+      (reduce
+        (fn [map ending]
+          (assoc map ending type)) map (:fileendings type)))
     {}
     audio-types))
 

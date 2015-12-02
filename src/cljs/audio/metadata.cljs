@@ -1,6 +1,7 @@
 (ns audio.metadata
   (:require [cljs.nodejs :as nodejs]
-            [audio.constants :as cs]))
+            [audio.constants :as cs]
+            [filesystem.path :refer [get-extension]]))
 
 
 (def md (nodejs/require "audio-metadata"))
@@ -16,18 +17,21 @@
     #(.id3v2 md %)))
 
 
-(defn format-meta [map]
-  (js->clj {:keywordize true} map))
+(defn format-meta [meta] (js->clj meta :keywordize true))
 
 
 (defn- get-meta-int [file stream callback]
-  (-> stream (-> type :name get-reader) format-meta callback))
+  (let [reader (-> (:name file) get-extension get-reader)
+        raw (reader stream)
+        formatted (format-meta raw)]
+    (callback formatted)))
 
 
 (defn get-metadata
-  ([file callback] (.readFile fs file)
-    (fn [err data]
-      (if err
-        (print err)
-        (get-meta-int file data callback))))
+  ([file callback]
+    (.readFile fs (:path file)
+      (fn [err data]
+        (if err
+          (print err)
+          (get-meta-int file data callback)))))
   ([file stream callback] (get-meta-int file stream callback)))
