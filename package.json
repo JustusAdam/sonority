@@ -3,6 +3,7 @@
   "license": "Private",
   "private": true,
   "dependencies": {
+    "audio-metadata": "^0.3.0",
     "fs-extra": "0.24.0"
   },
   "devDependencies": {

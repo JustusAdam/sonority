@@ -3,25 +3,37 @@
             [cljsjs.react]
             [cljs.nodejs :as nodejs]
             [clojure.string :as string]
-            [sonority.player :as player :refer [File]]))
+            [sonority.player :as player]
+            [audio.constants :refer [audio-endings]]
+            [audio.types :refer [Album Track album-identifier meta-track-to-album get-meta-val]]
+            [audio.metadata :as md]))
 
 (def fs (nodejs/require "fs"))
+
+(defrecord File [name path])
 
 (nodejs/enable-util-print!)
 (def music-folder (File. "Music" "/Users/justusadam/Music"))
 
-(def files (reagent/atom #{}))
+(def files (reagent/atom {}))
 
 (def folder-select (reagent/atom music-folder))
 
 (def search-crit (reagent/atom ""))
 
-(def audio-endings
-  ["mp3" "ogg" "wav" "m4a"])
-
 (defn check-and-add-file [file]
-  (if (some (partial = (last (string/split (:name file)  #"\." ))) audio-endings)
-    (swap! files #(conj % file))))
+  (if (contains? audio-endings (-> (string/split (:name file)  #"\." ) last keyword))
+    (md/get-metadata file
+      (fn [meta]
+        (let [track (Track. (get meta :title (:name file)) meta (:path file))]
+          (swap! files
+            (fn [files]
+               (update files (album-identifier track)
+                (fn [album]
+                  (case album
+                    nil (Album. (meta-track-to-album meta) (get-meta-val track :album) #{track})
+                    (update album :tracks #(conj % track))))))))))))
+    ; (swap! files #(conj % file))))
 
 (defn scan-folder [folder]
   (.readdir fs (:path folder)
@@ -47,6 +59,40 @@
     [:input {:value @target :on-change #(reset! target (-> % .-target .-value))}]
     [:button {:on-click #(reset! search-crit "")} "x"]])
 
+
+(defn track-as-tr
+  [file]
+  [:tr {:on-click #(player/select-new file)}
+    [:td (:name file)]
+    [:td [:a {:on-click #(player/add-to-queue file)} "enqueue"]]])
+
+
+(defn searched []
+  (let [crit (string/lower-case @search-crit)
+        matching
+          (filter
+            #(not= -1 (.indexOf (string/lower-case (:name %)) crit))
+            (apply concat (map :tracks @files)))]
+    [:table
+      (doall
+        (map track-as-tr matching))]))
+
+
+(defn all-albums
+  []
+  [:ul.accordion
+    (let [selected @player/selected-piece]
+      (doall
+        (for [album (sort-by :title @files)]
+          ^{:key (:path album)}
+          [:li.accordion-navigation
+            [:a {:href (-> album :title (partial str "#"))}
+              [:div {:id (:title album)}
+                [:table
+                  (doall
+                    (map track-as-tr (sort-by #(get-meta-val % :tracknumber) (:tracks album))))]]]])))])
+
+
 (defn fileview []
   [:div.row
     [:div.column.small-6
@@ -60,17 +106,8 @@
                                                                       (File. val val)))}]]
         [:button {:on-click #(rescan-folder @folder-select)} "Index"]]
       (search-bar search-crit)
-      [:table
-        (let [crit (string/lower-case @search-crit)
-              selected @player/selected-piece]
-          (doall (for [file (filter #(not= -1 (.indexOf (string/lower-case (:name %)) crit)) (sort-by :name @files))]
-                  ^{:key (:path file)}
-                  [:tr
-                    ((if (= selected file)
-                      #(assoc % :class "active")
-                      identity)
-                     {:on-click #(player/select-new file)})
-                    [:td (:name file)]
-                    [:td [:a {:on-click #(player/add-to-queue file)} "enqueue"]]])))]]
+      (if @search-crit
+        (searched)
+        (all-albums))]
     [:div.col-xs-6
       (player/std-interface)]])

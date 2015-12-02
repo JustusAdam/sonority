@@ -12,8 +12,6 @@
 
 ; independant utility functions
 
-(defrecord File [name path])
-
 
 (defn format-time [c]
   (let [d (int c)]
@@ -43,7 +41,9 @@
 
 
 
-(defn alter-volume [amount]
+(defn alter-volume
+  "Increase or decrease the volume"
+  [amount]
   (swap! volume
     (fn [vol]
       (let [new-vol (+ amount vol)]
@@ -77,33 +77,36 @@
 (defn- toggle-player [key ref old-state new-state]
   (if new-state
     (do
-      ; (attach-clock-player-time-updater)
       (.play @player))
     (do
-      ; (detach-clock-player-time-updater)
       (.pause @player))))
 
-(defn toggle-piece [key ref old-state new-state]
+(defn- toggle-piece [key ref old-state new-state]
   (if (not= old-state new-state)
-    ; (reset! player (create-player (:path new-state)))))
     (set! (.-src @player) (:path new-state))))
-    ; (swap! player #(do (.pause %) (create-player (:path new-state))))))
 
-(defn select-new [piece]
+(defn select-new
+  "Set the selected piece."
+  [piece]
   (do
-    ;(reset! playing true)
     (reset! selected-piece piece)))
 
-(defn play-next []
+(defn play-next
+  "Pop the topmost element of the queue and play it in the player."
+  []
   (swap! queue (fn [[x & r]] (do (select-new x) r))))
 
-(defn add-as-next [file]
+(defn add-as-next
+  "Push the element as the topmost element onto the queue."
+  [file]
   (swap! queue #(cons % file)))
 
 (defn- rem-q-item-where [pred]
   (swap! queue (fn [queue] (util/drop-where pred queue))))
 
-(defn add-to-queue [file]
+(defn add-to-queue
+  "Append the element as last element in the queue."
+  [file]
   (swap! queue #(conj % file)))
 
 (defn remove-queue-item [a]
@@ -115,7 +118,9 @@
 
 ; ui
 
-(defn controls []
+(defn controls
+  "Collection of elements used to interact with the player"
+  []
   (let [player-time (.-duration @player)
         current @current-player-time]
     [:div.controls
@@ -130,7 +135,9 @@
       [:button {:on-click #(alter-volume (- 0 volume-alter-interval))} "Volume down"]
       [:progress.progress {:value @volume}]]))
 
-(defn interface [piece]
+(defn std-interface
+  "A UI for the player."
+  []
   [:div
     [:section
       [:h3 "Queue"]
@@ -140,11 +147,8 @@
             ^{:key (str "queue-" index (:name file))}
             [:tr
               [:td (str (:name file))]
-              [:td [:a {:on-click #(remove-queue-item (int index))} "remove"]]]))]]])
+              [:td [:a {:on-click #(remove-queue-item (int index))} "remove"]]]))]]
     (controls)])
-
-(defn std-interface []
-  (interface @selected-piece))
 
 
 ; wiring watchers
