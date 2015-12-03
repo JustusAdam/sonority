@@ -18,6 +18,7 @@
 (defn get-reader [type]
   (case type
     :ogg #(.ogg md %)
+    :MPEG-4 #(.id3v1 md %)
     #(.id3v2 md %)))
 
 

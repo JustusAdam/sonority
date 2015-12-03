@@ -7,7 +7,8 @@
 (def audio-types
   [ (AudioType. :mp3 [] ["mp3"])
     (AudioType. :ogg ["oga"] ["oga", "ogg"])
-    (AudioType. :wma [] ["wma"])])
+    (AudioType. :wma [] ["wma"])
+    (AudioType. :MPEG-4 [] ["m4p" "mp4" "m4a"])])
 
 
 (def audio-map

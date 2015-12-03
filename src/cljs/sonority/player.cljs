@@ -66,10 +66,22 @@
 (defn- detach-clock-player-time-updater []
   (remove-watch clock :player-time-updater))
 
+(defn select-new
+  "Set the selected piece."
+  [piece]
+  (do
+    (reset! selected-piece piece)))
+
+(defn play-next
+  "Pop the topmost element of the queue and play it in the player."
+  []
+  (swap! queue (fn [[x & r]] (do (select-new x) r))))
+
 (defn- create-player [piece]
   (let [elem (if (nil? piece) (js/Audio.) (js/Audio. piece))]
     (do
       (.addEventListener elem "durationchange" #(update-player-time))
+      (.addEventListener elem "ended" #(play-next))
       (set! (.-volume elem) @volume)
       (if @playing (.play elem))
       elem)))
@@ -83,18 +95,10 @@
 
 (defn- toggle-piece [key ref old-state new-state]
   (if (not= old-state new-state)
-    (set! (.-src @player) (:path new-state))))
-
-(defn select-new
-  "Set the selected piece."
-  [piece]
-  (do
-    (reset! selected-piece piece)))
-
-(defn play-next
-  "Pop the topmost element of the queue and play it in the player."
-  []
-  (swap! queue (fn [[x & r]] (do (select-new x) r))))
+    (do
+      (set! (.-src @player) (:path new-state))
+      (if @playing
+        (.play @player)))))
 
 (defn add-as-next
   "Push the element as the topmost element onto the queue."
@@ -124,7 +128,7 @@
   (let [player-time (.-duration @player)
         current @current-player-time]
     [:div.controls
-      [:div (:name @selected-piece)]
+      [:div (:title @selected-piece)]
       [:button {:on-click #(swap! playing not)} (if @playing "||" ">")]
       [:progress.progress
         { :value (if (js/isNaN current) 0 current)
@@ -146,7 +150,7 @@
           (for [[index file] (map vector (range) @queue)]
             ^{:key (str "queue-" index (:name file))}
             [:tr
-              [:td (str (:name file))]
+              [:td (str (:title file))]
               [:td [:a {:on-click #(remove-queue-item (int index))} "remove"]]]))]]
     (controls)])
 
