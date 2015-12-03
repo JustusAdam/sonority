@@ -9,32 +9,42 @@
             [audio.metadata :as md]
             [filesystem.path :refer [get-extension]]))
 
-(def fs (nodejs/require "fs"))
+(defonce fs (nodejs/require "fs"))
 
 (defrecord File [name path])
 
+(defrecord WrappedAlbum [album expanded])
+
 (nodejs/enable-util-print!)
-(def music-folder (File. "Music" "/Users/justusadam/Music"))
+(defonce music-folder (File. "Music" "/Users/justusadam/Music/iTunes/iTunes Media/Music"))
 
-(def files (reagent/atom {}))
+(defonce files (reagent/atom {}))
 
-(def folder-select (reagent/atom music-folder))
+(defonce folder-select (reagent/atom music-folder))
 
-(def search-crit (reagent/atom ""))
+(defonce search-crit (reagent/atom ""))
+
+(defonce indexing (reagent/atom 0))
 
 (defn check-and-add-file [file]
   (if (contains? audio-endings (get-extension (:path file)))
-    (md/get-metadata file
-      (fn [meta]
-        (let [track (Track. (get meta :title (:name file)) meta (:path file))
-              ai (album-identifier track)]
-          (swap! files
-            (fn [files]
-              (update files ai
-                (fn [album]
-                  (case album
-                    nil (Album. (meta-track-to-album meta) (get-meta-val track :album) #{track})
-                    (update album :tracks #(conj % track))))))))))))
+    (do
+      (swap! indexing inc)
+      (md/get-metadata file
+        (fn [meta]
+          (let [track (Track. (get meta :title (:name file)) meta (:path file))
+                ai (album-identifier track)]
+            (do
+              (swap! files
+                (fn [files]
+                  (update files ai
+                    (fn [album]
+                      (case album
+                        nil (WrappedAlbum.
+                              (Album. (get-meta-val track :album) (meta-track-to-album meta) [track])
+                              false)
+                        (update-in album [:album :tracks] #(conj % track)))))))
+              (swap! indexing dec))))))))
 
 
 (defn scan-folder [folder]
@@ -64,6 +74,7 @@
 
 (defn track-as-tr
   [file]
+  ^{:key (:path file)}
   [:tr {:on-click #(player/select-new file)}
     [:td (:title file)]
     [:td [:a {:on-click #(player/add-to-queue file)} "enqueue"]]])
@@ -80,18 +91,30 @@
         (map track-as-tr matching))]))
 
 
+(defn expand-album [album]
+  (let [ident (if (number? album)
+                album
+                (album-identifier album))]
+    (swap! files
+      (fn [files]
+        (update-in files [ident :expanded] not)))))
+
+
 (defn all-albums
   []
-  [:ul.accordion
+  [:ul
     (doall
-      (for [album (sort-by :title (vals @files))]
-        ^{:key (:path album)}
-        [:li.accordion-navigation
-          [:a {:href (-> album :title (partial str "#"))}
-            [:div {:id (:title album)}
+      (for [wrapped (sort-by #(get-meta-val % :title) (vals @files))]
+        (let [album (:album wrapped)
+              title (:title album)
+              ident (album-identifier album)]
+          ^{:key ident}
+          [:li
+            [:a {:on-click #(expand-album ident)} title]
+            [:div {:class [(if (:expanded wrapped) "expanded" "collapsed")]}
               [:table
                 (doall
-                  (map track-as-tr (sort-by #(get-meta-val % :tracknumber) (:tracks album))))]]]]))])
+                  (map track-as-tr (sort-by #(get-meta-val % :tracknumber) (:tracks album))))]]])))])
 
 
 (defn fileview []
@@ -99,6 +122,7 @@
     [:div.column.small-6
       [:h2 "I am the fileview."]
       [:p (str "Folder indexed: '" (:path @folder-select) "'")]
+      [:p (str "Status: " (if (zero? @indexing) "Finished" "Indexing ..."))]
       [:div
         [:div
           [:label {:for "pick-folder"} "Select indexed folder"]
