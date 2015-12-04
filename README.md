@@ -12,14 +12,54 @@ This is a proof of concept and a test run with the technology stack. Goal is to 
 
 ## Requirements
 
-- Nodejs
+- Nodejs, `npm`, `grunt` and `bower`
 - Clojure(script)
 - Leinigen
 
 ## Installation
 
+### Dependencies
+
+Install `nodejs`, `npm` and the Java Runtime Environment with your favorite package manager.
+
+- Install grunt:
+  ```
+  npm install -g grunt grunt-cli
+  ```
+- install bower:
+  ```
+  npm install -g bower
+  ```
+
+### Program
+
 - Clone the repository
-- `$ npm install`
-- `$ grunt`
-- `$ lein cljsbuild once` or `lein figwheel`
-- `$ grunt launch`
+- Install node dependencies (JavaScript dependencies)
+  ```
+  npm install
+  ```
+
+- Install electron (Base program)
+  ```
+  grunt
+  ```
+
+- Install bower dependencies (Style)
+  ```
+  bower install
+  ```
+
+- Build the code (Builds the ClojureScript code)
+  ```
+  lein cljsbuild once
+  ```
+  or
+  ```
+  lein figwheel
+  ```
+  for continuous building and automatic code updates in the application.
+
+- Launch the application
+  ```
+  grunt launch
+  ```

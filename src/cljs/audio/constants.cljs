@@ -5,10 +5,10 @@
 
 
 (def audio-types
-  [ (AudioType. :mp3 [] ["mp3"])
-    (AudioType. :ogg ["oga"] ["oga", "ogg"])
-    (AudioType. :wma [] ["wma"])
-    (AudioType. :MPEG-4 [] ["m4p" "mp4" "m4a"])])
+  [ (AudioType. :mp3 [] [".mp3"])
+    (AudioType. :ogg ["oga"] [".oga", ".ogg"])
+    (AudioType. :wma [] [".wma"])
+    (AudioType. :MPEG-4 [] [".m4p" ".mp4" ".m4a"])])
 
 
 (def audio-map
@@ -24,7 +24,4 @@
     audio-types))
 
 (defn type-from-ending [t]
-  (let [kw  (if (keyword? t)
-              t
-              (keyword t))]
-    (kw audio-endings)))
+  (t audio-endings))
