@@ -8,6 +8,6 @@
 
 (defn get-extension [path] (.extname pathlib path))
 
-(defn join parts (apply .join pathlib parts))
+(defn join [& parts] (apply (.-join pathlib) parts))
 
-(defn exists path (.exists pathlib path))
+(defn exists [path] (.exists pathlib path))

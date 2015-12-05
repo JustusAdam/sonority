@@ -176,5 +176,5 @@
       (if (empty? @search-crit)
         (all-albums)
         (searched))]
-    [:div.col-xs-6
+    [:div.column.small-6
       (player/std-interface)]])

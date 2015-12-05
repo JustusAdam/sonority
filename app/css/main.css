@@ -5,3 +5,12 @@
 .collapsed {
   display: none;
 }
+
+.fixed {
+  position: fixed;
+
+}
+
+.fixed.bottom {
+  bottom: 0px;
+}

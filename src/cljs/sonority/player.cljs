@@ -36,9 +36,10 @@
 (defonce queue (reagent/atom []))
 
 (defonce volume (reagent/atom 0.5))
+(def volume-min 0.0)
+(def volume-max 1.0)
 
 (def volume-alter-interval 0.05)
-
 
 
 (defn alter-volume
@@ -48,8 +49,8 @@
     (fn [vol]
       (let [new-vol (+ amount vol)]
         (cond
-          (< 1 new-vol) 1.0
-          (> 0 new-vol) 0
+          (< volume-max new-vol) 1.0
+          (> volume-min new-vol) 0
           :else new-vol)))))
 
 (defn- player-volume-updater [key ref old-state new-state]
@@ -65,6 +66,14 @@
 
 (defn- detach-clock-player-time-updater []
   (remove-watch clock :player-time-updater))
+
+(defn seek-player [time]
+  (swap! player
+    (fn [player]
+      (do
+        (if (and (<= time (.-duration player)) (>= time 0))
+          (set! (.-currentTime player) time))
+        player))))
 
 (defn select-new
   "Set the selected piece."
@@ -122,22 +131,44 @@
 
 ; ui
 
+(defn slider [ target & {:value-scale 1 :min 0 :max 100 :as extras :extra-properties {}}]
+  [:input (merge
+            { :type "range" :min (:min extras) :max (:max extras)
+              :value (* (:value-scale extras) @target)
+              :on-change #(reset! target (/ (.-target.value %) (:value-scale extras)))}
+            (:extra-properties extras))])
+
+(defn volume-slider []
+  (slider volume :value-scale 100 :min 0 :max 100))
+
+(defn progress-slider []
+  (slider
+    current-player-time
+    :min 0 :max (* 100 (.-duration @player)) :value-scale 100
+    :extra-properties {:style {:width "100%"}
+                       :on-change #(seek-player (/ (.-target.value %) 100))}))
+
 (defn controls
   "Collection of elements used to interact with the player"
   []
   (let [player-time (.-duration @player)
         current @current-player-time]
-    [:div.controls
-      [:div (:title @selected-piece)]
-      [:button {:on-click #(swap! playing not)} (if @playing "||" ">")]
-      [:progress.progress
-        { :value (if (js/isNaN current) 0 current)
-          :max (if (js/isNaN player-time) 0 player-time)}]
-      [:span (str (format-time current) "/" (format-time player-time))]
-      [:button {:on-click #(play-next)} "next"]
-      [:button {:on-click #(alter-volume volume-alter-interval)} "Volume up"]
-      [:button {:on-click #(alter-volume (- 0 volume-alter-interval))} "Volume down"]
-      [:progress.progress {:value @volume}]]))
+    [:div.controls.row
+      [:div.column.small-2
+        [:button {:on-click #(swap! playing not)} (if @playing "||" ">")]
+        [:button {:on-click #(play-next)} "next"]]
+      [:div.column.small-8
+        [:div.row
+          [:div.column.small-12]
+          (:title @selected-piece)]
+        [:div.row
+          [:div.column.small-12
+            (progress-slider)]]]
+      [:div.column.small-1
+        [:span (str (format-time current) "/" (format-time player-time))]]
+      [:div.column.small-1
+        (volume-slider)]]))
+
 
 (defn std-interface
   "A UI for the player."
@@ -152,7 +183,8 @@
             [:tr
               [:td (str (:title file))]
               [:td [:a {:on-click #(remove-queue-item (int index))} "remove"]]]))]]
-    (controls)])
+    [:div
+      (controls)]])
 
 
 ; wiring watchers
