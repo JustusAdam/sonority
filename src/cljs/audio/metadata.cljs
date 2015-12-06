@@ -14,8 +14,6 @@
 
 (nodejs/enable-util-print!)
 
-(def should-print (reagent/atom 3))
-
 (def metacache
   (app-fs/get-config "metadata"
     #(map-vals
@@ -24,8 +22,6 @@
           (get v "title")
           (get v "meta")
           (get v "path"))) %)))
-
-(print (vals @metacache))
 
 (defn get-reader [type]
   (case type
