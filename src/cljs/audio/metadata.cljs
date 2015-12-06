@@ -27,12 +27,18 @@
     js->clj
     app-fs/read-yaml))
 
-(defonce _ (app-fs/register-config
-            (app-fs/Config.
-              :metadata
-              nil
-              read-config
-              app-fs/write-yaml)))
+(defonce write-config
+  (comp
+    app-fs/write-yaml
+    clj->js))
+
+(defonce config-register
+  (app-fs/register-config
+    (app-fs/Config.
+      :metadata
+      nil
+      read-config
+      write-config)))
 
 (defonce metacache
   (app-fs/get-config :metadata))
@@ -97,4 +103,4 @@
     (if (can-fetch? manager)
       (pop-fetch))))
 
-(defonce _ (add-watch fetch-manager :fetch-watch fetch-queue-watcher))
+(add-watch fetch-manager :fetch-watch fetch-queue-watcher)

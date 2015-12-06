@@ -8,7 +8,8 @@
             [audio.types :refer [ Album Track album-identifier
                                   meta-track-to-album get-meta-val]]
             [audio.metadata :as md]
-            [filesystem.path :refer [get-extension]]))
+            [filesystem.path :as pathlib :refer [get-extension]]
+            [filesystem.application :refer [homedir]]))
 
 (defonce fs (nodejs/require "fs"))
 
@@ -19,7 +20,7 @@
 (nodejs/enable-util-print!)
 (defonce music-folder (File.
                         "Music"
-                        "/Users/justusadam/Music/iTunes/iTunes Media/Music/"))
+                        (pathlib/join homedir "Music")))
 
 (defonce files (reagent/atom {}))
 

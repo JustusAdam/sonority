@@ -26,7 +26,8 @@
     path))
 
 
-(def app-folder (get-or-create (pathlib/join (.homedir os) ".sonority")))
+(def homedir (.homedir os))
+(def app-folder (get-or-create (pathlib/join homedir ".sonority")))
 (def config-folder (get-or-create (pathlib/join app-folder "config")))
 
 
