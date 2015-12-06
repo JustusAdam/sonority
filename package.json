@@ -4,7 +4,8 @@
   "private": true,
   "dependencies": {
     "audio-metadata": "^0.3.0",
-    "fs-extra": "0.24.0"
+    "fs-extra": "0.24.0",
+    "yamljs": "^0.2.4"
   },
   "devDependencies": {
     "grunt": "0.4.5",

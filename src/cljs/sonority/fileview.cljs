@@ -36,13 +36,11 @@
     (do
       (swap! indexing inc)
       (md/get-metadata file
-        (fn [meta]
-          (let [track (Track.
-                        (get meta :title (:name file))
-                        meta
-                        (:path file))
+        (fn [track]
+          (let [meta (:meta track)
                 ai (album-identifier track)]
             (do
+              (print "got metadata")
               (swap! files
                 (fn [files]
                   (update files ai
