@@ -125,7 +125,7 @@
   [:ul
     (doall
       (for [wrapped (sort-by
-                      #(get-meta-val % :title)
+                      #(-> % :album :title)
                       (vals @files))]
         (let [album (:album wrapped)
               title (:title album)
@@ -141,7 +141,7 @@
                           "collapsed")]}
               [:table
                 (doall
-                  (map track-as-tr (sort-by #(get-meta-val % :tracknumber) (:tracks album))))]]])))])
+                  (map track-as-tr (sort-by #(get-meta-val % :tracknumber (:title %)) (:tracks album))))]]])))])
 
 
 (defn fileview []

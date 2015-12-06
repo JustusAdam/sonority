@@ -84,7 +84,7 @@
 (defn play-next
   "Pop the topmost element of the queue and play it in the player."
   []
-  (swap! queue (fn [[x & r]] (do (select-new x) r))))
+  (swap! queue (fn [[x & r]] (do (select-new x) (into [] r)))))
 
 (defn- create-player [piece]
   (let [elem (if (nil? piece) (js/Audio.) (js/Audio. piece))]
@@ -156,7 +156,7 @@
     [:div.controls.row
       [:div.column.small-2
         [:button {:on-click #(swap! playing not)} (if @playing "||" ">")]
-        [:button {:on-click #(play-next)} "next"]]
+        [:button {:on-click #(play-next) :disabled (empty? @queue)} "next"]]
       [:div.column.small-8
         [:div.row
           [:div.column.small-12]
