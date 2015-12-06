@@ -72,9 +72,7 @@
 
 (defn conf-watcher [name]
   (fn [key ref old-state new-state]
-    (do
-      (print "Change detected")
-      (write-config-file name new-state))))
+    (write-config-file name new-state)))
 
 (defn- get-config-i [name converter]
   (if-not (contains? @configs name)

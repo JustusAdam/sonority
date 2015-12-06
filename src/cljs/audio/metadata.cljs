@@ -10,7 +10,9 @@
 
 
 (def md (nodejs/require "audio-metadata"))
-(def fs (nodejs/require "fs"))
+
+(def fetch-manager (atom {:running 0 :queue []}))
+(def fetches-max 8)
 
 (nodejs/enable-util-print!)
 
@@ -37,23 +39,48 @@
       meta
       (:path file))))
 
-
 (defn- get-meta-int [file stream callback]
   (let [reader (-> (:name file) get-extension get-reader)
         raw (reader stream)
         formatted (format-meta file raw)]
     (do
       (swap! metacache #(assoc % (:path file) formatted))
+      (swap! fetch-manager #(update % :running dec))
       (callback formatted))))
 
 (defn get-metadata [file callback]
   (if (contains? @metacache (:path file))
-    (do
-      (print "skipping " file)
-      (callback (get @metacache (:path file))))
-    (do
-      (fio/read-file (:path file)
-        (fn [err data]
-          (if err
-            (print err))
-          (get-meta-int file data callback))))))
+    (callback (get @metacache (:path file)))
+    (swap! fetch-manager (fn [q] (update q :queue #(conj % [file callback]))))))
+
+(defn- fetch-action [file callback]
+  (fio/read-file (:path file)
+    (fn [err data]
+      (do
+        (if err
+          (print err))
+        (get-meta-int file data callback)))))
+
+(defn can-fetch? [manager]
+  (let [{queue :queue running :running} manager]
+    (not (or (= fetches-max running) (zero? (count queue))))))
+
+(defn pop-fetch []
+  (loop []
+    (let [ manager @fetch-manager
+           queue (:queue manager)
+           head (peek queue)
+           tail (pop queue)]
+      (if (can-fetch? manager)
+        (if (compare-and-set! fetch-manager manager
+              (update (update manager :queue pop) :running inc))
+          (apply fetch-action head)
+          (recur))))))
+
+
+(defn fetch-queue-watcher [key ref old-state manager]
+  (let [{queue :queue running :running} manager]
+    (if (can-fetch? manager)
+      (pop-fetch))))
+
+(defonce _ (add-watch fetch-manager :fetch-watch fetch-queue-watcher))

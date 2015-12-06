@@ -19,7 +19,7 @@
 (nodejs/enable-util-print!)
 (defonce music-folder (File.
                         "Music"
-                        "/Users/justusadam/Music/iTunes/iTunes Media/Music/Nigel Stanford"))
+                        "/Users/justusadam/Music/iTunes/iTunes Media/Music/"))
 
 (defonce files (reagent/atom {}))
 
@@ -40,7 +40,6 @@
           (let [meta (:meta track)
                 ai (album-identifier track)]
             (do
-              (print "got metadata")
               (swap! files
                 (fn [files]
                   (update files ai
