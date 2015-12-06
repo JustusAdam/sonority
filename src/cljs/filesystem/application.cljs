@@ -2,7 +2,7 @@
   (:require [cljs.nodejs :as nodejs]
             [filesystem.path :as pathlib]
             [filesystem.io :as fio]
-            [reagent.core :as reagent]))
+            [sonority.error :refer [error]]))
 
 (def os (nodejs/require "os"))
 (def fs (nodejs/require "fs"))
@@ -11,21 +11,13 @@
 (nodejs/enable-util-print!)
 
 
-(def read-yaml (comp js->clj (.-parse YAML)))
-(def write-yaml (comp #(.stringify YAML % 4) clj->js))
-(def read-json (comp js->clj (.-parse js/JSON)))
-(def write-json (comp (.-stringify js/JSON) clj->js))
+(defrecord Config [name path reader writer])
 
 
-(def readers
-  { ".yaml" read-yaml
-    ".yml" read-yaml
-    ".json" read-json})
-(def writers
-  { ".yaml" write-yaml
-    ".yml" write-yaml
-    ".json" write-json})
-
+(def read-yaml (.-parse YAML))
+(def write-yaml #(.stringify YAML % 4))
+(def read-json (.-parse js/JSON))
+(def write-json (.-stringify js/JSON))
 
 (defn get-or-create [path]
   (do
@@ -43,46 +35,54 @@
     (str name ".yaml")
     name))
 
+(defn make-default-config-path [name]
+  (let [name (normalize-configname (str name))]
+    (pathlib/join config-folder name)))
 
-(def get-reader (comp (partial get readers) pathlib/get-extension))
-(def get-writer (comp (partial get writers) pathlib/get-extension))
+(defn normalize-config [config]
+  (if (nil? (:path config))
+    (assoc config :path (make-default-config-path (:name config)))
+    config))
 
-(defn- write-config-file [name data]
-  (let [nname (normalize-configname name)
-        path (pathlib/join config-folder nname)
-        writer (get-writer nname)]
+(defn- write-config-file [config data]
+  (let [{writer :writer path :path} config]
     (fio/write-file path (writer data))))
 
-(defn- get-config-file [name]
-  (let [nname (normalize-configname name)
-        path (pathlib/join config-folder nname)
-        reader (get-reader nname)]
+(defn- get-config-file [config]
+  (let [{path :path name :name reader :reader writer :writer} config]
     (if-not (fio/exists-sync path)
-      (do
-        (fio/write-file-sync path ((get-writer nname) {}))
-        {}))
-    (let [val (reader (fio/read-file-sync path (js-obj "encoding" "utf8")))]
-      (do
-        (if (nil? val)
-          {}
-          val)))))
+        (do
+          (fio/write-file-sync path (writer {}))
+          {})
+      (let [val (reader (fio/read-file-sync path (js-obj "encoding" "utf8")))]
+        (do
+          (if (nil? val)
+            {}
+            val))))))
 
-(def configs (reagent/atom {}))
+(def config-data (atom {}))
+(def configs (atom {}))
+
+(defn register-config [config]
+  (if (contains? (:name config) @configs)
+    (error "Reregistering config is not allowed")
+    (let [config (normalize-config config)]
+      (swap! configs #(assoc % (:name config) config)))))
 
 
 (defn conf-watcher [name]
   (fn [key ref old-state new-state]
-    (write-config-file name new-state)))
+    (write-config-file (get @configs name) new-state)))
 
-(defn- get-config-i [name converter]
+(defn get-config [name]
   (if-not (contains? @configs name)
-    (let [conf (reagent/atom (converter (get-config-file name)))]
-      (do
-        (add-watch conf :persistence-updater (conf-watcher name))
-        (swap! configs #(assoc % name conf))
-        conf))
-    (get @configs name)))
-
-(defn get-config
-  ([name] (get-config-i name identity))
-  ([name converter] (get-config-i name converter)))
+    (error "Attemting to read unregistered config " name)
+    (if-not (contains? @config-data name)
+      (let [meta (get @configs name)
+            {reader :reader} meta
+            conf (atom (get-config-file meta))]
+        (do
+          (add-watch conf :persistence-updater (conf-watcher name))
+          (swap! config-data #(assoc % name conf))
+          conf))
+      (get @config-data name))))

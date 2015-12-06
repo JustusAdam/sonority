@@ -6,24 +6,38 @@
             [reagent.core :as reagent]
             [filesystem.application :as app-fs]
             [filesystem.io :as fio]
-            [sonority.util :refer [map-vals]]))
+            [sonority.util :refer [map-vals map-keys]]))
 
 
-(def md (nodejs/require "audio-metadata"))
+(defonce md (nodejs/require "audio-metadata"))
 
-(def fetch-manager (atom {:running 0 :queue []}))
-(def fetches-max 8)
+(defonce fetch-manager (atom {:running 0 :queue []}))
+(defonce fetches-max 8)
 
 (nodejs/enable-util-print!)
 
-(def metacache
-  (app-fs/get-config "metadata"
-    #(map-vals
+(defonce read-config
+  (comp
+    #(map-vals %
       (fn [v]
         (Track.
           (get v "title")
-          (get v "meta")
-          (get v "path"))) %)))
+          (map-keys (get v "meta") keyword)
+          (get v "path"))))
+    js->clj
+    app-fs/read-yaml))
+
+(defonce _ (app-fs/register-config
+            (app-fs/Config.
+              :metadata
+              nil
+              read-config
+              app-fs/write-yaml)))
+
+(defonce metacache
+  (app-fs/get-config :metadata))
+
+(print (get @metacache (first (keys @metacache))))
 
 (defn get-reader [type]
   (case type
