@@ -2,7 +2,7 @@
   (:require [cljs.nodejs :as nodejs]
             [audio.constants :as cs]
             [audio.types :as atypes :refer [Track]]
-            [filesystem.path :refer [get-extension]]
+            [filesystem.path :as pathlib :refer [get-extension]]
             [reagent.core :as reagent]
             [filesystem.application :as app-fs]
             [filesystem.io :as fio]
@@ -25,25 +25,23 @@
           (map-keys (get v "meta") keyword)
           (get v "path"))))
     js->clj
-    app-fs/read-yaml))
+    app-fs/read-json))
 
 (defonce write-config
   (comp
-    app-fs/write-yaml
+    app-fs/write-json
     clj->js))
 
 (defonce config-register
   (app-fs/register-config
     (app-fs/Config.
       :metadata
-      nil
+      (pathlib/join app-fs/app-folder "metadata.json")
       read-config
       write-config)))
 
 (defonce metacache
   (app-fs/get-config :metadata))
-
-(print (get @metacache (first (keys @metacache))))
 
 (defn get-reader [type]
   (case type

@@ -133,13 +133,11 @@
             [:a
               {:on-click #(expand-album ident)}
               title]
-            [:div
-              {:class [ (if (:expanded wrapped)
-                          "expanded"
-                          "collapsed")]}
-              [:table
-                (doall
-                  (map track-as-tr (sort-by #(get-meta-val % :tracknumber (:title %)) (:tracks album))))]]])))])
+            (if (:expanded wrapped)
+              [:div
+                [:table
+                  (doall
+                    (map track-as-tr (sort-by #(get-meta-val % :tracknumber (:title %)) (:tracks album))))]])])))])
 
 
 (defn fileview []
