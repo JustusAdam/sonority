@@ -16,6 +16,7 @@ figwheel_server.log
 /electron
 /app/config.json
 /app/*.log
+/app/css
 /builds
 /app/components
 .nrepl-port
@@ -24,3 +25,4 @@ figwheel_server.log
 *-init.clj
 /.idea
 *.iml
+/.sass-cache
