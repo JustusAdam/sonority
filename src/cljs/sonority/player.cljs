@@ -1,7 +1,6 @@
 (ns sonority.player
   (:require [reagent.core :as reagent]
             [cljs.nodejs :as nodejs]
-            [clojure.string :as string]
             [sonority.util :as util]
             [clojure.zip :refer [vector-zip]]))
 
@@ -13,7 +12,9 @@
 ; independant utility functions
 
 
-(defn format-time [c]
+(defn format-time
+  "Format a long representing time to a readable string."
+  [c]
   (let [d (int c)]
     (if (js/isNaN c)
       "-:-"
@@ -43,7 +44,7 @@
 
 
 (defn alter-volume
-  "Increase or decrease the volume"
+  "Increase or decrease the volume by a standard amount."
   [amount]
   (swap! volume
     (fn [vol]
@@ -53,7 +54,9 @@
           (> volume-min new-vol) 0
           :else new-vol)))))
 
-(defn- player-volume-updater [key ref old-state new-state]
+(defn- player-volume-updater
+  "Update the volume whenever @volume changes."
+  [key ref old-state new-state]
   (set! (.-volume @player) new-state))
 
 (defn- update-player-time [] (reset! current-player-time (.-currentTime @player)))
@@ -67,7 +70,9 @@
 (defn- detach-clock-player-time-updater []
   (remove-watch clock :player-time-updater))
 
-(defn seek-player [time]
+(defn seek-player
+  "Change the players current position."
+  [time]
   (swap! player
     (fn [player]
       (do
@@ -86,7 +91,9 @@
   []
   (swap! queue (fn [[x & r]] (do (select-new x) (into [] r)))))
 
-(defn- create-player [piece]
+(defn- create-player
+  "Create a new player and attach appropriate event handlers to it."
+  [piece]
   (let [elem (if (nil? piece) (js/Audio.) (js/Audio. piece))]
     (do
       (.addEventListener elem "durationchange" #(update-player-time))
@@ -95,14 +102,18 @@
       (if @playing (.play elem))
       elem)))
 
-(defn- toggle-player [key ref old-state new-state]
+(defn- toggle-player
+  "Toggle the player when @playing changes."
+  [key ref old-state new-state]
   (if new-state
     (do
       (.play @player))
     (do
       (.pause @player))))
 
-(defn- toggle-piece [key ref old-state new-state]
+(defn- toggle-piece
+  "Change the currently played piece whenever @selected-piece changes."
+  [key ref old-state new-state]
   (if (not= old-state new-state)
     (do
       (set! (.-src @player) (:path new-state))
@@ -114,7 +125,9 @@
   [file]
   (swap! queue #(cons % file)))
 
-(defn- rem-q-item-where [pred]
+(defn- rem-q-item-where
+  "Remove an item from the queue by predicate."
+  [pred]
   (swap! queue (fn [queue] (util/drop-where pred queue))))
 
 (defn add-to-queue
@@ -122,7 +135,9 @@
   [file]
   (swap! queue #(conj % file)))
 
-(defn remove-queue-item [a]
+(defn remove-queue-item
+  "Remove a queue item."
+  [a]
   (cond
     (integer? a) (swap! queue #(util/drop-nth a %))
     (fn? a) (rem-q-item-where a)
@@ -131,17 +146,23 @@
 
 ; ui
 
-(defn slider [ target & {:value-scale 1 :min 0 :max 100 :as extras :extra-properties {}}]
+(defn slider
+  "A html slider with an event handler attached."
+  [ target & {:value-scale 1 :min 0 :max 100 :as extras :extra-properties {}}]
   [:input (merge
             { :type "range" :min (:min extras) :max (:max extras)
               :value (* (:value-scale extras) @target)
               :on-change #(reset! target (/ (.-target.value %) (:value-scale extras)))}
             (:extra-properties extras))])
 
-(defn volume-slider []
+(defn volume-slider
+  "Slider for the player volume."
+  []
   (slider volume :value-scale 100 :min 0 :max 100))
 
-(defn progress-slider []
+(defn progress-slider
+  "Iteractive slider for the current player position."
+  []
   (slider
     current-player-time
     :min 0 :max (* 100 (.-duration @player)) :value-scale 100

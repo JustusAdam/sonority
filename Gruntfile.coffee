@@ -27,7 +27,7 @@ module.exports = (grunt) ->
   electron_path    = "electron";
   electron_version = "0.33.1";
 
-  packageJson      = require (__dirname + '/package.json')
+  packageJson      = require __dirname + '/package.json'
 
   #------------------------------------------------------------------------------
   # ShellJS
@@ -53,6 +53,19 @@ module.exports = (grunt) ->
     'download-electron':
       version: electron_version
       outputDir: 'electron'
+    sass:
+      dist:
+        options:
+          style: 'compressed'
+          loadPath: 'src/sass'
+        files:
+          'app/css/main.css': 'src/sass/main.sass'
+      dev:
+        options:
+          style: 'expanded'
+          loadPath: 'src/sass'
+        files:
+          'app/css/main.css': 'src/sass/main.sass'
 
 
   # ------------------------------------------------------------------------------
@@ -68,6 +81,8 @@ module.exports = (grunt) ->
   # ------------------------------------------------------------------------------
   #  Setup Tasks
   # ------------------------------------------------------------------------------
+
+  grunt.loadNpmTasks 'grunt-contrib-sass'
 
   grunt.registerTask 'setup', [
     'download-electron',
@@ -90,10 +105,13 @@ module.exports = (grunt) ->
     grunt.log.writeln "\nCleaning and building ClojureScript production files..."
     exec "lein do clean, with-profile production cljsbuild once"
 
-  grunt.registerTask 'launch', (async) ->
+  grunt.registerTask 'launch', ['sass:dev', 'launch-app' ]
+
+  grunt.registerTask 'launch-app', (async) ->
     IsAsync = (async == "true")
     grunt.log.writeln "\nLaunching development version..."
     local_exe = exe[os]
+    grunt.task.run 'sass'
     exec(path.join(electron_path, local_exe) + " app", {async:IsAsync})
 
   grunt.registerTask 'check-old', ->
@@ -134,7 +152,7 @@ module.exports = (grunt) ->
     builds = "builds"
     devApp = "app"
     rootPkg = "package.json"
-    releaseApp: path.join builds, devApp
+    releaseApp = path.join builds, devApp
 
     paths =
       builds: builds
@@ -202,7 +220,12 @@ module.exports = (grunt) ->
   #  Tasks
   # ------------------------------------------------------------------------------
 
-  grunt.registerTask 'release', ['cljsbuild-prod', 'prepare-release', 'release-linux', 'release-mac', 'release-win']
+  grunt.registerTask 'release', [ 'sass',
+                                  'cljsbuild-prod',
+                                  'prepare-release',
+                                  'release-linux',
+                                  'release-mac',
+                                  'release-win']
 
   grunt.registerTask 'cljsbuild-prod', ->
     grunt.log.writeln "\nCleaning and building ClojureScript production files..."
@@ -212,11 +235,11 @@ module.exports = (grunt) ->
     build = getBuildMeta()
     paths = getReleasePaths build
 
-    grunt.log.writeln("name:    "+build.name.cyan)
-    grunt.log.writeln("version: "+build.version.cyan)
-    grunt.log.writeln("date:    "+build.date.cyan)
-    grunt.log.writeln("commit:  "+build.commit.cyan)
-    grunt.log.writeln("release: "+build.releaseName.cyan)
+    grunt.log.writeln "name:    "+build.name.cyan
+    grunt.log.writeln "version: "+build.version.cyan
+    grunt.log.writeln "date:    "+build.date.cyan
+    grunt.log.writeln "commit:  "+build.commit.cyan
+    grunt.log.writeln "release: "+build.releaseName.cyan
 
     mkdir '-p', paths.builds
 
@@ -266,13 +289,13 @@ module.exports = (grunt) ->
     done = this.async()
     build = getBuildMeta()
     cb = (appPath) ->
-      if which("makensis")
+      if which "makensis"
         dirName = path.join appPath, ".."
         exeName = path.join dirName, path.basename(dirName) + ".exe"
         grunt.config.set "makensis",
-          version: build.version,
-          releaseDir: path.resolve(appPath), # absolute paths required on linux
-          outFile: path.resolve(exeName)
+          version: build.version
+          releaseDir: path.resolve appPath # absolute paths required on linux
+          outFile: path.resolve exeName
 
         grunt.task.run "makensis"
       else
@@ -291,24 +314,23 @@ module.exports = (grunt) ->
       cb = (f) ->
         dirName = path.join f, ".."
         dmgName = path.join dirName, path.basename(dirName) + ".dmg"
-        grunt.config.set("appdmg",
+        grunt.config.set "appdmg",
           options:
-            "title": "sonority",
-            "background": "scripts/dmg/TestBkg.png",
-            "icon-size": 80,
+            "title": "sonority"
+            "background": "scripts/dmg/TestBkg.png"
+            "icon-size": 80
             "contents": [
               { "x": 448, "y": 344, "type": "link", "path": "/Applications" },
               { "x": 192, "y": 344, "type": "file", "path": path.join(f, packageJson.name + ".app") }
             ]
-          ,
           target:
             dest: dmgName
-        )
+
         grunt.task.run "appdmg"
     opts =
-      "arch": "x64",
-      "platform": "darwin",
-      "icon": "app/img/logo.icns"
+      arch: "x64"
+      platform: "darwin"
+      icon: "app/img/logo.icns"
     defineRelease done, opts, cb
 
 

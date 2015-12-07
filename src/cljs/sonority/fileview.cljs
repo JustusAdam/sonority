@@ -67,12 +67,16 @@
                 (.isDirectory stat) (scan-folder file)
                 (.isFile stat) (check-and-add-file file)))))))))
 
-(defn rescan-folder [folder]
+(defn rescan-folder
+  "Index a folder."
+  [folder]
   (do
     (reset! files {})
     (scan-folder folder)))
 
-(defn search-bar [target]
+(defn search-bar
+  "A searchbar for searching the current tracks."
+  [target]
   [:div.search.row.collapse
     [:label "Search"]
     [:div.column.small-10
@@ -84,6 +88,7 @@
 
 
 (defn track-as-tr
+  "Wrap a track and interaction elements into a table row."
   [file]
   ^{:key (:path file)}
   [:tr
@@ -147,27 +152,28 @@
       [:a
         {:on-click #(swap! show-indexed-input not)}
         (str "Folder indexed: '" (:path @folder-select) "'")]
-      [:div
-        {:class [(if @show-indexed-input "expanded" "collapsed")]}
-        [:p
-          (str "Status: "
-                  (if (zero? @indexing)
-                    "Finished"
-                    "Indexing ..."))]
-        [:div.row.collapse
-          [:label
-            {:for "pick-folder"}
-            "Select indexed folder"]
-          [:div.column.small-10
-            [:input#pick-folder
-              { :type "text"
-                :on-change #(reset! folder-select
-                              (let [val (-> % .-target .-value)]
-                                (File. val val)))}]]
-          [:div.column.small-2
-            [:button.button.postfix
-              {:on-click #(rescan-folder @folder-select)}
-              "Index"]]]]
+      (if @show-indexed-input
+        [:div
+          {:class []}
+          [:p
+            (str "Status: "
+                    (if (zero? @indexing)
+                      "Finished"
+                      "Indexing ..."))]
+          [:div.row.collapse
+            [:label
+              {:for "pick-folder"}
+              "Select indexed folder"]
+            [:div.column.small-10
+              [:input#pick-folder
+                { :type "text"
+                  :on-change #(reset! folder-select
+                                (let [val (-> % .-target .-value)]
+                                  (File. val val)))}]]
+            [:div.column.small-2
+              [:button.button.postfix
+                {:on-click #(rescan-folder @folder-select)}
+                "Index"]]]])
       (search-bar search-crit)
       (if (empty? @search-crit)
         (all-albums)

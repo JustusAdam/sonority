@@ -1,12 +1,14 @@
 (ns sonority.core
   (:require [reagent.core :as reagent]
             [cljsjs.react]
-            [sonority.fileview :as fv]))
+            [sonority.fileview :as fv]
+            [sonority.alert :as alert]))
 
 (defn main-page
   []
-  [:div.container
-      (fv/fileview)])
+  [:div.container.pageheight
+   (fv/fileview)
+   (alert/alert-display)])
 
 (defn mount-root
   []
@@ -14,4 +16,6 @@
 
 (defn init!
   []
-  (mount-root))
+  (do
+    (alert/show-alert (alert/confirm-alert "Testalert"))
+    (mount-root)))

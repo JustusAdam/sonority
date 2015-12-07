@@ -1,3 +1,19 @@
+.alert.backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+}
+.alert.inner {
+  margin-left: auto;
+  margin-right: auto;
+  padding: 20px;
+  background-color: white;
+}
+
 .expanded {
   display: block;
 }
@@ -8,9 +24,14 @@
 
 .fixed {
   position: fixed;
-
 }
 
 .fixed.bottom {
-  bottom: 0px;
+  bottom: 0;
 }
+
+.pageheight {
+  height: 100%;
+}
+
+/*# sourceMappingURL=main.css.map */

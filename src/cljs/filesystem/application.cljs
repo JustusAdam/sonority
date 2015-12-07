@@ -50,7 +50,7 @@
     (fio/write-file path (writer data))))
 
 (defn- get-config-file [config]
-  (let [{path :path name :name reader :reader writer :writer} config]
+  (let [{path :path reader :reader writer :writer} config]
     (if-not (fio/exists-sync path)
         (do
           (fio/write-file-sync path (writer {}))

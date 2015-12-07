@@ -1,9 +1,7 @@
 (ns audio.metadata
   (:require [cljs.nodejs :as nodejs]
-            [audio.constants :as cs]
-            [audio.types :as atypes :refer [Track]]
+            [audio.types :refer [->Track]]
             [filesystem.path :as pathlib :refer [get-extension]]
-            [reagent.core :as reagent]
             [filesystem.application :as app-fs]
             [filesystem.io :as fio]
             [sonority.util :refer [map-vals map-keys]]))
@@ -20,7 +18,7 @@
   (comp
     #(map-vals %
       (fn [v]
-        (Track.
+        (->Track
           (get v "title")
           (map-keys (get v "meta") keyword)
           (get v "path"))))
@@ -34,7 +32,7 @@
 
 (defonce config-register
   (app-fs/register-config
-    (app-fs/Config.
+    (app-fs/->Config
       :metadata
       (pathlib/join app-fs/app-folder "metadata.json")
       read-config
@@ -52,7 +50,7 @@
 
 (defn format-meta [file meta]
   (let [meta (js->clj meta :keywordize-keys true)]
-    (Track.
+    (->Track
       (get meta :title (:name file))
       meta
       (:path file))))
@@ -87,8 +85,7 @@
   (loop []
     (let [ manager @fetch-manager
            queue (:queue manager)
-           head (peek queue)
-           tail (pop queue)]
+           head (peek queue)]
       (if (can-fetch? manager)
         (if (compare-and-set! fetch-manager manager
               (update (update manager :queue pop) :running inc))
@@ -97,8 +94,7 @@
 
 
 (defn fetch-queue-watcher [key ref old-state manager]
-  (let [{queue :queue running :running} manager]
-    (if (can-fetch? manager)
-      (pop-fetch))))
+  (if (can-fetch? manager)
+    (pop-fetch)))
 
 (add-watch fetch-manager :fetch-watch fetch-queue-watcher)
