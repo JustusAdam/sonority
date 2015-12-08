@@ -17,5 +17,5 @@
 (defn init!
   []
   (do
-    (alert/show-alert (alert/confirm-alert "Testalert"))
+    (alert/show-alert (alert/return-value-alert "Testalert" ["No" "Yes" "Maybe" "Never"] alert/hide-alert))
     (mount-root)))

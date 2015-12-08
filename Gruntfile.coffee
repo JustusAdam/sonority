@@ -24,8 +24,8 @@ module.exports = (grunt) ->
     mac:  "Electron.app/Contents/MacOS/Electron"
     linux:  "electron"
 
-  electron_path    = "electron";
-  electron_version = "0.33.1";
+  electron_path    = "electron"
+  electron_version = "0.33.1"
 
   packageJson      = require __dirname + '/package.json'
 
@@ -111,8 +111,7 @@ module.exports = (grunt) ->
     IsAsync = (async == "true")
     grunt.log.writeln "\nLaunching development version..."
     local_exe = exe[os]
-    grunt.task.run 'sass'
-    exec(path.join(electron_path, local_exe) + " app", {async:IsAsync})
+    exec path.join(electron_path, local_exe) + " app", {async:IsAsync}
 
   grunt.registerTask 'check-old', ->
     grunt.log.writeln "\nChecking clojure dependencies"

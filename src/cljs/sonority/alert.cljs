@@ -37,23 +37,18 @@
   [message choices])
 
 (defn show-alert [alert]
-  (do
-    (swap! alert-queue #(conj % alert))
-    (print @alert-queue)))
+  (swap! alert-queue #(conj % alert)))
 
 
 (defn alert-display []
   (let [[alert & _ ] @alert-queue]
     (if-not (nil? alert)
-      [:div.alert.backdrop
-       [:div.alert.inner
+      [:div.alert.backdrop.row
+       [:div.alert.inner.small-offset-2.small-8.column
         [:div.row
-         [:div.column.small-12 (:message alert)]
-         (doall
+         [:div.column.small-12 (:message alert)]]
+           (doall
            (for [{value :value handler :handler} (:choices alert)]
-             [:div.column.small-1
-              [:button
-               {:on-click handler}
-               value]]))]]])))
-
-
+             ^{:key value}
+             [:div.column.small-3
+              [:button {:on-click handler} value]]))]])))
