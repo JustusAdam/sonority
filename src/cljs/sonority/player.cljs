@@ -75,16 +75,14 @@
   [time]
   (swap! player
     (fn [player]
-      (do
-        (if (and (<= time (.-duration player)) (>= time 0))
-          (set! (.-currentTime player) time))
-        player))))
+      (if (and (<= time (.-duration player)) (>= time 0))
+        (set! (.-currentTime player) time))
+      player)))
 
 (defn select-new
   "Set the selected piece."
   [piece]
-  (do
-    (reset! selected-piece piece)))
+  (reset! selected-piece piece))
 
 (defn play-next
   "Pop the topmost element of the queue and play it in the player."
@@ -95,28 +93,25 @@
   "Create a new player and attach appropriate event handlers to it."
   [piece]
   (let [elem (if (nil? piece) (js/Audio.) (js/Audio. piece))]
-    (do
-      (.addEventListener elem "durationchange" #(update-player-time))
-      (.addEventListener elem "ended" #(play-next))
-      (set! (.-volume elem) @volume)
-      (if @playing (.play elem))
-      elem)))
+    (.addEventListener elem "durationchange" #(update-player-time))
+    (.addEventListener elem "ended" #(play-next))
+    (set! (.-volume elem) @volume)
+    (if @playing (.play elem))
+    elem))
 
 (defn- toggle-player
   "Toggle the player when @playing changes."
   [key ref old-state new-state]
   (if new-state
-    (do
-      (.play @player))
-    (do
-      (.pause @player))))
+    (.play @player)
+    (.pause @player)))
 
 (defn- toggle-piece
   "Change the currently played piece whenever @selected-piece changes."
   [key ref old-state new-state]
   (if (not= old-state new-state)
     (do
-      (set! (.-src @player) (:path new-state))
+      (set! (.-src @player) (.-path new-state))
       (if @playing
         (.play @player)))))
 
@@ -148,11 +143,11 @@
 
 (defn slider
   "A html slider with an event handler attached."
-  [ target & {:value-scale 1 :min 0 :max 100 :as extras :extra-properties {}}]
+  [target & {:value-scale 1 :min 0 :max 100 :as extras :extra-properties {}}]
   [:input (merge
-            { :type "range" :min (:min extras) :max (:max extras)
+            { :type "range" :min (.-min extras) :max (.-max extras)
               :value (* (:value-scale extras) @target)
-              :on-change #(reset! target (/ (.-target.value %) (:value-scale extras)))}
+              :on-change #(reset! target (/ (.-target.value %) (.-value-scale extras)))}
             (:extra-properties extras))])
 
 (defn volume-slider
@@ -200,9 +195,9 @@
       [:table
         (doall
           (for [[index file] (map vector (range) @queue)]
-            ^{:key (str "queue-" index (:name file))}
+            ^{:key (str "queue-" index (.-name file))}
             [:tr
-              [:td (str (:title file))]
+              [:td (str (.-title file))]
               [:td [:a {:on-click #(remove-queue-item (int index))} "remove"]]]))]]
     [:div
       (controls)]])

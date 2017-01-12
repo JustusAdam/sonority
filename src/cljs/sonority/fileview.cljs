@@ -1,12 +1,11 @@
 (ns sonority.fileview
   (:require [reagent.core :as reagent]
-            [cljsjs.react]
             [cljs.nodejs :as nodejs]
             [clojure.string :as string]
             [sonority.player :as player]
             [audio.constants :refer [audio-endings]]
-            [audio.types :refer [ Album Track album-identifier
-                                  meta-track-to-album get-meta-val]]
+            [audio.types :refer [Album Track album-identifier
+                                 meta-track-to-album get-meta-val]]
             [audio.metadata :as md]
             [filesystem.path :as pathlib :refer [get-extension]]
             [filesystem.application :refer [homedir]]))
@@ -14,8 +13,6 @@
 (defonce fs (nodejs/require "fs"))
 
 (defrecord File [name path])
-
-(defrecord WrappedAlbum [album expanded])
 
 (nodejs/enable-util-print!)
 (defonce music-folder (File.
@@ -32,36 +29,35 @@
 
 (defonce show-indexed-input (reagent/atom false))
 
+(defonce current-expanded (reagent/atom nil))
+
 (defn check-and-add-file [file]
-  (if (contains? audio-endings (get-extension (:path file)))
+  (if (contains? audio-endings (get-extension (.-path file)))
     (do
       (swap! indexing inc)
       (md/get-metadata file
         (fn [track]
-          (let [meta (:meta track)
+          (let [meta (.-meta track)
                 ai (album-identifier track)]
-            (do
-              (swap! files
-                (fn [files]
-                  (update files ai
-                    (fn [album]
-                      (case album
-                        nil (WrappedAlbum.
-                              (Album.
-                                (get-meta-val track :album)
-                                (meta-track-to-album meta)
-                                [track])
-                              false)
-                        (update-in album [:album :tracks] #(conj % track)))))))
-              (swap! indexing dec))))))))
+            (swap! files
+              (fn [files]
+                (update files ai
+                  (fn [album]
+                    (case album
+                      nil (Album.
+                            (get-meta-val track :album)
+                            (meta-track-to-album meta)
+                            [track])
+                      (update-in album [:tracks] #(conj % track)))))))
+            (swap! indexing dec)))))))
 
 
 (defn scan-folder [folder]
-  (.readdir fs (:path folder)
+  (.readdir fs (.-path folder)
     (fn [err files]
       (doall
-        (for [file (map #(File. % (str (:path folder) "/" %)) files)]
-          (.stat fs (:path file)
+        (for [file (map #(File. % (str (.-path folder) "/" %)) files)]
+          (.stat fs (.-path file)
             (fn [err stat]
               (cond
                 (.isDirectory stat) (scan-folder file)
@@ -70,9 +66,8 @@
 (defn rescan-folder
   "Index a folder."
   [folder]
-  (do
-    (reset! files {})
-    (scan-folder folder)))
+  (reset! files {})
+  (scan-folder folder))
 
 (defn search-bar
   "A searchbar for searching the current tracks."
@@ -90,12 +85,12 @@
 (defn track-as-tr
   "Wrap a track and interaction elements into a table row."
   [file]
-  ^{:key (:path file)}
-  [:tr
-    [:td
+  ^{:key (.-path file)}
+  [:div.track
+    [:span.title
       {:on-click #(player/select-new file)}
       (:title file)]
-    [:td
+    [:span.actions
       [:a
         {:on-click #(player/add-to-queue file)}
         "enqueue"]]])
@@ -104,45 +99,48 @@
 (defn searched []
   (let [crit (string/lower-case @search-crit)
         matching
-          (filter
-            #(not= -1
-              (.indexOf (string/lower-case (:title %)))
-              crit)
-            (apply concat (map :tracks @files)))]
+        (filter
+          #(not= -1
+            (.indexOf (string/lower-case (.-title %)))
+            crit)
+          (apply concat (map :tracks @files)))]
     [:table.search-results
       (doall
         (map track-as-tr matching))]))
 
 
-(defn expand-album [album]
-  (let [ident (if (number? album)
-                album
-                (album-identifier album))]
-    (swap! files
-      (fn [files]
-        (update-in files [ident :expanded] not)))))
+(defn expand-album [ident]
+  (swap! current-expanded #(if (= % ident) nil ident)))
+
+
+(defn render-album-as-li [album]
+  (let [title (.-title album)
+        ident (album-identifier album)
+        expanded @current-expanded]
+    ^{:key ident}
+    [:li
+      [:a
+        {:on-click #(expand-album ident)}
+        title]
+      (if (= expanded ident)
+        [:div.album.songlist
+          (doall
+            (map
+              track-as-tr
+              (sort-by
+                (fn [track] (get-meta-val track :tracknumber (.-title track)))
+                (.-tracks album))))])]))
 
 
 (defn all-albums
   []
   [:ul
     (doall
-      (for [wrapped (sort-by
-                      #(-> % :album :title)
-                      (vals @files))]
-        (let [album (:album wrapped)
-              title (:title album)
-              ident (album-identifier album)]
-          ^{:key ident}
-          [:li
-            [:a
-              {:on-click #(expand-album ident)}
-              title]
-            (if (:expanded wrapped)
-              [:div
-                [:table
-                  (doall
-                    (map track-as-tr (sort-by #(get-meta-val % :tracknumber (:title %)) (:tracks album))))]])])))])
+      (map
+        render-album-as-li
+        (sort-by
+          :title
+          (vals @files))))])
 
 
 (defn fileview []
@@ -151,7 +149,7 @@
       [:h2 "I am the fileview."]
       [:a
         {:on-click #(swap! show-indexed-input not)}
-        (str "Folder indexed: '" (:path @folder-select) "'")]
+        (str "Folder indexed: '" (.-path @folder-select) "'")]
       (if @show-indexed-input
         [:div
           {:class []}

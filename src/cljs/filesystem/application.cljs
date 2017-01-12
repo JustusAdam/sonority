@@ -20,10 +20,9 @@
 (def write-json (.-stringify js/JSON))
 
 (defn get-or-create [path]
-  (do
-    (if (-> path fio/exists-sync not)
-      (fio/mkdir-sync path))
-    path))
+  (if-not (fio/exists-sync path)
+    (fio/mkdir-sync path))
+  path)
 
 
 (def homedir (.homedir os))
@@ -56,10 +55,9 @@
           (fio/write-file-sync path (writer {}))
           {})
       (let [val (reader (fio/read-file-sync path (js-obj "encoding" "utf8")))]
-        (do
-          (if (nil? val)
-            {}
-            val))))))
+        (if (nil? val)
+          {}
+          val)))))
 
 (def config-data (atom {}))
 (def configs (atom {}))
@@ -82,8 +80,7 @@
       (let [meta (get @configs name)
             {reader :reader} meta
             conf (atom (get-config-file meta))]
-        (do
-          (add-watch conf :persistence-updater (conf-watcher name))
-          (swap! config-data #(assoc % name conf))
-          conf))
+        (add-watch conf :persistence-updater (conf-watcher name))
+        (swap! config-data #(assoc % name conf))
+        conf)
       (get @config-data name))))
